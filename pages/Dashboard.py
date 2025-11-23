@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 import plotly.graph_objects as go
+import gdown
+import os
 
 # Tentukan Color Scale bertema Merah (contoh)
 # px.colors.sequential.Reds -> Skala Merah dari Plotly
@@ -69,7 +71,16 @@ def load_data(file_path):
         st.error(f"Terjadi kesalahan saat memproses data: {e}")
         return pd.DataFrame()
 
-FILE_PATH = 'pages/crime_data_clean.csv'
+model_dir = "dataset"
+FILE_PATH = 'dataset/crime_data_clean.csv'
+
+
+if not os.path.exists(FILE_PATH):
+    st.info("Mengunduh dataset...")
+    os.makedirs(model_dir, exist_ok=True)
+    url = "https://drive.google.com/uc?id=1rUX8TfaP0Mr3MdmNHkOg8-DvYgGzV2wD"
+    gdown.download(url, FILE_PATH, quiet=False)
+
 df = load_data(FILE_PATH)
 
 if df.empty:
