@@ -1,0 +1,42 @@
+/* Mengubah warna latar belakang sidebar */
+
+div[data-testid="stAppViewContainer"] h1 {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 60px;
+    font-weight: 600;
+}
+
+/* Memberi gaya pada metric box (KPI) */
+[data-testid="stMetric"] {
+    background-color: #ffffff00;
+    padding: 15px;
+    border-radius: 10px;
+    /* border: 0.05px solid #ff4b4b; */
+    border-left: 3px solid #ff4b4b;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Mengubah font di dalam metrik */
+[data-testid="stMetricLabel"] p {
+    font-weight: 600; /* Agak tebal untuk label KPI */
+}
+
+.stPlotlyChart {
+    background-color: #ffffff00;
+    border-radius: 10px;
+    /* border: 0.05px solid #ff4b4b; */
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+    overflow: hidden; 
+    /* Padding untuk memberi ruang di sekitar visualisasi di dalam kartu */
+    
+    /* Garis tepi lembut */
+    
+    /* Membuat sudut menjadi bulat */
+    
+    /* Efek bayangan (Box Shadow) */
+    /* Parameter: offset-x | offset-y | blur-radius | spread-radius | color */
+    
+    /* Pastikan background-nya putih agar bayangan terlihat jelas */
+    background-color: transparent;
+}
