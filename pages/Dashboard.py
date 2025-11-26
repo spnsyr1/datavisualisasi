@@ -453,14 +453,14 @@ with col9:
         df_gender,
         values='Jumlah',
         names='Gender',
-        title='Kejahatan per Jenis Kelamin',
+        title='Kejahatan per Gender',
         hole=.3,
         color_discrete_sequence=RED_PIE_COLORS
     )
 
     fig_gender.update_layout(
         title={
-            'text': fig_trend.layout.title.text,
+            'text': fig_gender.layout.title.text,
             'x': 0.5,
             'xanchor': 'center'
         }
