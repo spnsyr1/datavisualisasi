@@ -535,7 +535,7 @@ with col12:
         orientation='h',
         color='Jumlah',
         color_continuous_scale=RED_COLOR_SCALE,
-        title='Top 10 Senjata (Exclude Not Specified)'
+        title='Top 10 Senjata Pelaku (Exclude Not Specified)'
     )
     fig_weapon.update_yaxes(categoryorder='total ascending')
     fig_weapon.update_layout(
