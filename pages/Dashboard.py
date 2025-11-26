@@ -6,9 +6,6 @@ import plotly.graph_objects as go
 import gdown
 import os
 
-# Tentukan Color Scale bertema Merah (contoh)
-# px.colors.sequential.Reds -> Skala Merah dari Plotly
-# 'red' atau '#ff0000' -> Warna Merah Solid
 RED_COLOR_SCALE = px.colors.sequential.Reds # Untuk Bar, Heatmap, dan Peta Kepadatan
 RED_LINE_COLOR = '#E3170D' # Warna Merah Solid untuk Garis
 RED_MARKER_COLOR = '#FF6347' # Warna Merah Solid untuk Marker
@@ -29,7 +26,6 @@ def local_css(file_name):
     except FileNotFoundError:
         st.error(f"File CSS '{file_name}' tidak ditemukan.")
 
-# Panggil fungsi ini di awal skrip Streamlit Anda
 local_css("pages/style.css")
 
 # --- 1. Pemuatan dan Pembersihan Data (Caching) ---
@@ -51,7 +47,7 @@ def load_data(file_path):
             if col in df.columns:
                 df[col] = df[col].replace(['Unknown', ' '], 'Not Specified')
         
-        # Penanganan data 'victim_age' yang tidak masuk akal (misalnya < 0 atau sangat tinggi)
+        # Penanganan data 'victim_age' yang tidak masuk akal
         df = df[df['victim_age'] >= 0]
         df['victim_age_group'] = pd.cut(df['victim_age'],
                                         bins=[0, 17, 24, 34, 44, 54, 64, 120],
@@ -74,7 +70,6 @@ def load_data(file_path):
 model_dir = "dataset"
 FILE_PATH = 'dataset/crime_data_clean.csv'
 
-
 if not os.path.exists(FILE_PATH):
     st.info("Mengunduh dataset...")
     os.makedirs(model_dir, exist_ok=True)
@@ -87,29 +82,12 @@ if df.empty:
     st.stop()
 
 # --- 2. Sidebar (Filter) ---
-
-# Pastikan kolom 'occurrence_date' bertipe datetime
-# df['occurrence_date'] = pd.to_datetime(df['occurrence_date'])
-
-# Filter Utama: Rentang Tanggal (Slider tetap sama)
-# --- 2. Sidebar (Filter) ---
-
-# Pastikan kolom 'occurrence_date' bertipe datetime
-# df['occurrence_date'] = pd.to_datetime(df['occurrence_date'])
-
 min_timestamp = df['occurrence_date'].min().date()
 max_timestamp = df['occurrence_date'].max().date()
 
-# =====================================================================
-# PERUBAHAN: Ganti st.slider dengan dua st.date_input
-# =====================================================================
-
 st.sidebar.header("Filter Analisis") 
-
-# Menambahkan judul di atas input tanggal
 st.sidebar.write("Pilih Rentang Tanggal Kejadian")
 
-# Membuat 2 kolom di dalam sidebar
 col_start, col_end = st.sidebar.columns(2)
 
 # Input tanggal "Dari" di kolom pertama
@@ -120,8 +98,6 @@ with col_start:
         max_value=max_timestamp, 
         value=min_timestamp, 
         key="start_date_filter",
-        # Menyembunyikan label "Dari" agar lebih rapi
-        # label_visibility="collapsed" 
     )
 
 # Input tanggal "Sampai" di kolom kedua
@@ -132,12 +108,9 @@ with col_end:
         max_value=max_timestamp, 
         value=max_timestamp, 
         key="end_date_filter",
-        # Menyembunyikan label "Sampai" agar lebih rapi
-        # label_visibility="collapsed"
     )
 
-# --- Terapkan Filter Rentang Tanggal ---
-# Pastikan Tanggal Awal <= Tanggal Akhir
+# --- Filter Rentang Tanggal ---
 # if start_date_input <= end_date_input:
 #     start_date = pd.to_datetime(start_date_input)
 #     # Tambahkan 23:59:59 ke tanggal akhir agar mencakup seluruh hari
@@ -147,18 +120,9 @@ with col_end:
 # else:
 #     st.sidebar.error("Tanggal Awal harus sebelum atau sama dengan Tanggal Akhir.")
 #     df_filtered = df.copy() # Gunakan data mentah jika filter tidak valid
-    
-# =====================================================================
 
-# --- Terapkan Filter Rentang Tanggal ---
-# Inisialisasi variabel untuk menghindari error jika filter tidak valid
-# ---------------------------------------------------------------------
-# BAGIAN FILTER (TEMPAT LOGIKA BARU DITAMBAHKAN)
-# ---------------------------------------------------------------------
-
-# Ambil tanggal data tertua yang tersedia (Global)
+# Ambil tanggal data terlama yang tersedia
 min_data_date = df['occurrence_date'].min()
-# Inisialisasi variabel di luar if/else
 is_delta_valid = False 
 total_crimes_prev = 0
 crimes_per_day_prev = 0
@@ -177,11 +141,7 @@ if start_date_input <= end_date_input:
     end_date_prev = start_date - pd.Timedelta(seconds=1) 
     start_date_prev = end_date_prev - pd.Timedelta(days=duration_days - 1)
     
-    # -----------------------------------------------------------------
-    # LOGIKA BARU: VALIDASI KETERSEDIAAN DATA SEBELUMNYA
-    # -----------------------------------------------------------------
-    
-    # Cek: Apakah awal periode pembanding lebih awal dari tanggal data tertua?
+    # Cek: Apakah awal periode pembanding lebih awal dari tanggal data terlama?
     if start_date_prev < min_data_date:
         is_delta_valid = False
     else:
@@ -190,111 +150,91 @@ if start_date_input <= end_date_input:
         # Filter data untuk periode sebelumnya
         df_prev_period = df[(df['occurrence_date'] >= start_date_prev) & (df['occurrence_date'] <= end_date_prev)]
         
-        # Hitung Metrik Periode Sebelumnya (Hanya jika valid)
+        # Hitung Metrik Periode Sebelumnya
         total_crimes_prev = len(df_prev_period)
         crimes_per_day_prev = round(total_crimes_prev / duration_days, 2) if duration_days > 0 else 0
         
 else:
-    # ... (error handling tetap di sini)
     df_filtered = df.copy() 
-    
-# ---------------------------------------------------------------------
-# AKHIR BLOK FILTER
-# ---------------------------------------------------------------------
 
-# ... (Logika Filter Multiselect: Area, Kategori, Gender)
-
-# --- Fungsi Bantuan untuk Filter Multiselect Tanpa Default 'Semua Data' ---
+# --- Filter Multiselect Tanpa Default 'Semua Data' ---
 def get_unique_options(dataframe, column_name):
     """Mendapatkan opsi unik tanpa menambahkan 'Semua Data'."""
     # Mengambil semua opsi unik dari data yang sudah difilter berdasarkan tanggal
     return sorted(dataframe[column_name].unique().tolist())
 
-# Filter Tambahan (Multiselect tanpa opsi 'Semua Data' dan tanpa default)
-
-# Q2: Area
+# Area
 area_options = get_unique_options(df_filtered, 'area')
 area_selection = st.sidebar.multiselect(
     "Pilih Area",
     options=area_options,
-    # Tidak ada default, sehingga daftar akan kosong secara default
 )
 
-# Q4: Kategori Kejahatan
+# Kategori Kejahatan
 crime_options = get_unique_options(df_filtered, 'crime_category')
 crime_category_selection = st.sidebar.multiselect(
     "Pilih Kategori Kejahatan",
     options=crime_options,
-    # Tidak ada default, sehingga daftar akan kosong secara default
 )
 
-# Q5: Gender Korban
+# Gender Korban
 gender_options = get_unique_options(df_filtered, 'victim_gender')
 gender_selection = st.sidebar.multiselect(
     "Pilih Gender Korban",
     options=gender_options,
-    # Tidak ada default, sehingga daftar akan kosong secara default
 )
 
-# --- Terapkan filter tambahan dengan logika kosong = semua data ---
+# --- Filter tambahan dengan logika kosong = semua data ---
 df_final = df_filtered.copy()
 
-# Logika Filter: Jika list selection kosong, gunakan semua data pada kolom tersebut.
-if area_selection: # Jika list tidak kosong (ada pilihan)
+# Jika list selection kosong, gunakan semua data pada kolom tersebut.
+if area_selection:
     df_final = df_final[df_final['area'].isin(area_selection)]
 
-if crime_category_selection: # Jika list tidak kosong (ada pilihan)
+if crime_category_selection:
     df_final = df_final[df_final['crime_category'].isin(crime_category_selection)]
 
-if gender_selection: # Jika list tidak kosong (ada pilihan)
+if gender_selection:
     df_final = df_final[df_final['victim_gender'].isin(gender_selection)]
-
-# Sekarang df_final berisi data yang telah difilter.
-# Jika `area_selection` kosong, baris filter `df_final = df_final[df_final['area'].isin(area_selection)]` dilewati,
-# dan semua data pada kolom 'area' tetap dipertahankan.
 
 # --- 3. Judul Dashboard ---
 st.title("Dashboard Analisis Kejahatan Los Angeles 2020 - 2025")
 
 # --- 4. Baris 1: Key Performance Indicators (KPI) & Peta ---
-# Buat dua kolom utama: Kiri (untuk KPI) dan Kanan (untuk Peta)
-col_kpi, col_map = st.columns([1, 2]) # Rasio 1:2 atau 1:1.5 akan cocok untuk KPI & Peta
+# Kiri (untuk KPI) dan Kanan (untuk Peta)
+col_kpi, col_map = st.columns([1, 2])
 
-# --- Kolom Kanan: Peta (Q9) ---
+# --- Kolom Kanan: Peta ---
 with col_map:
-    # Gunakan Plotly Scattermapbox untuk kepadatan
-    # Pastikan df_final tidak kosong sebelum sampling
     if not df_final.empty:
-        # Ambil sampel jika data terlalu besar (Maks 20000 baris)
         sample_df = df_final.sample(min(20000, len(df_final)))
         
         fig_map = go.Figure(go.Densitymapbox(
-            # Data koordinat
             lat=sample_df['latitude'], 
             lon=sample_df['longitude'], 
             
             # Pengaturan Radius dan Warna Kepadatan
-            radius=10, # Ukuran radius kepadatan (sesuaikan nilainya)
-            colorscale=RED_COLOR_SCALE, # <--- **PERUBAHAN WARNA**
+            radius=10,
+            colorscale=RED_COLOR_SCALE,
             zmin=0,
             opacity=0.7,
 
             colorbar=dict(
                 title=dict(
                     text='Kepadatan Kejahatan', 
-                    side='bottom' # Posisikan judul di atas colorbar horizontal
+                    side='bottom'
                 ),
-                orientation='h', # <--- KUNCI: Membuatnya Horizontal
-                x=0.5,           # <--- Posisikan di tengah horizontal plot
-                y=-0.0001,         # <--- Posisikan di bawah plot (sesuaikan nilai ini)
+                orientation='h',
+                x=0.5,
+                y=-0.0001,
                 xanchor='center',
                 yanchor='top',
-                len=1,         # Panjang colorbar (70% lebar plot)
+                len=1,
                 bgcolor='rgba(0,0,0,0)', 
                 thickness=15
             ),
             
-            # Pengaturan Hover/Tooltip (Opsional, Densitymapbox kurang fleksibel)
+            # Pengaturan Hover/Tooltip
             customdata=sample_df[['area', 'crime_category']],
             hovertemplate="Area: %{customdata[0]}<br>Kategori Kejahatan: %{customdata[1]}<extra></extra>"
         ))
@@ -303,7 +243,7 @@ with col_map:
         fig_map.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',
             # Menentukan style peta
-            mapbox_style="open-street-map", # Diubah agar heatmap merah lebih menonjol
+            mapbox_style="open-street-map",
             # Menentukan lokasi awal peta
             mapbox_center={"lat": sample_df['latitude'].mean(), "lon": sample_df['longitude'].mean()},
             # Menentukan zoom
@@ -311,10 +251,9 @@ with col_map:
             # Menghilangkan margin agar peta memenuhi kotak
             margin={"r":0, "t":0, "l":0, "b":0},
             # Menentukan tinggi
-            height=525, # Sesuaikan kembali tinggi agar sesuai dengan 4 KPI
+            height=525,
         )
     else:
-        # Jika kosong, buat Figure kosong
         fig_map = go.Figure().update_layout(
              title="Data Filter Kosong. Tidak ada peta untuk ditampilkan.", height=600
         )
@@ -322,39 +261,11 @@ with col_map:
     st.plotly_chart(fig_map, use_container_width=True)
 
 # --- Kolom Kiri: Key Performance Indicators (KPI) ---
-# with col_kpi:     
-#     # Hitung KPI (Mengambil perhitungan dari kode asli Anda)
-#     total_crimes = len(df_final)
-    
-#     # Hitung selisih hari, pastikan tidak 0 untuk menghindari ZeroDivisionError
-#     delta_days = (end_date - start_date).days if 'end_date' in locals() and 'start_date' in locals() else 1
-#     crimes_per_day = round(total_crimes / delta_days, 2) if delta_days > 0 else 0
-    
-#     # KPI 3: Area dengan Kejahatan Tertinggi (Q2)
-#     top_area = df_final['area'].mode().iloc[0] if not df_final.empty and not df_final['area'].mode().empty else "N/A"
-    
-#     # KPI 4: Jenis Kejahatan Paling Dominan (Q4)
-#     # Perhatikan: Anda menggunakan 'crime' di kode asli, bukan 'crime_category'
-#     top_crime = df_final['crime'].mode().iloc[0] if not df_final.empty and not df_final['crime'].mode().empty else "N/A"
-
-#     # KPI 1: Total Jumlah Kejahatan
-#     st.metric(label="Total Jumlah Kejahatan", value=f"{total_crimes:,}")
-
-#     # KPI 2: Rata-Rata Kejahatan per Hari
-#     st.metric(label="Rata-Rata Kejahatan per Hari", value=f"{crimes_per_day:.2f}")
-
-#     # KPI 3: Area dengan Kejahatan Tertinggi (Q2)
-#     st.metric(label="Area Paling Rawan", value=top_area)
-
-#     # KPI 4: Jenis Kejahatan Paling Dominan (Q4)
-#     st.metric(label="Kejahatan Paling Dominan", value=top_crime)
-
-# --- Kolom Kiri: Key Performance Indicators (KPI) ---
 with col_kpi:
-    # Hitung KPI (Mengambil perhitungan dari kode asli Anda)
+    # Hitung KPI (Mengambil perhitungan dari kode asli)
     total_crimes = len(df_final)
     
-    # Durasi sudah dihitung di bagian filter: duration_days
+    # Durasi sudah dihitung di bagian filter
     crimes_per_day = round(total_crimes / duration_days, 2) if duration_days > 0 else 0
     
     # ********************* DELTA CALCULATION *********************
@@ -362,10 +273,10 @@ with col_kpi:
     delta_crimes_per_day = crimes_per_day - crimes_per_day_prev
     # *************************************************************
 
-    # KPI 3: Area dengan Kejahatan Tertinggi (Q2)
+    # Area dengan Kejahatan Tertinggi
     top_area = df_final['area'].mode().iloc[0] if not df_final.empty and not df_final['area'].mode().empty else "N/A"
     
-    # KPI 4: Jenis Kejahatan Paling Dominan (Q4)
+    # Jenis Kejahatan Paling Dominan
     top_crime = df_final['crime'].mode().iloc[0] if not df_final.empty and not df_final['crime'].mode().empty else "N/A"
 
     # --- Penentuan String Delta ---
@@ -373,11 +284,11 @@ with col_kpi:
         delta_str_crimes = f"{delta_total_crimes:+,} dari periode sebelumnya" # + untuk memaksa tanda +
         delta_str_day = f"{delta_crimes_per_day:+.2f} dari periode sebelumnya"
     else:
-        # Jika tidak valid, set delta ke None (tidak ditampilkan)
+        # Jika tidak valid, set delta ke None
         delta_str_crimes = None 
         delta_str_day = None
         
-    # KPI 1: Total Jumlah Kejahatan
+    # Total Jumlah Kejahatan
     st.metric(
         label="Total Jumlah Kejahatan", 
         value=f"{total_crimes:,}",
@@ -385,7 +296,7 @@ with col_kpi:
         delta_color="inverse"
     )
 
-    # KPI 2: Rata-Rata Kejahatan per Hari
+    # Rata-Rata Kejahatan per Hari
     st.metric(
         label="Rata-Rata Kejahatan per Hari", 
         value=f"{crimes_per_day:.2f}",
@@ -393,22 +304,19 @@ with col_kpi:
         delta_color="inverse"
     )
 
-    # KPI 3: Area dengan Kejahatan Tertinggi (Q2)
+    # Area dengan Kejahatan Tertinggi
     st.metric(label="Area Paling Rawan", value=top_area)
 
-    # KPI 4: Jenis Kejahatan Paling Dominan (Q4)
+    # Jenis Kejahatan Paling Dominan
     st.metric(label="Kejahatan Paling Dominan", value=top_crime)
 
 # --- 5. Baris 2: Tren Waktu (Line Chart) ---
-# Q1: Bagaimana tren jumlah kejahatan? (Line Chart)
-# Gunakan st.container() atau langsung di body utama (di luar kolom sebelumnya)     
-# Pastikan data frame tidak kosong sebelum grouping
+# Tren jumlah kejahatan
 if not df_final.empty:
     df_trend = df_final.groupby('month_year').size().reset_index(name='Jumlah Kejahatan')
     df_trend['occurrence_date'] = pd.to_datetime(df_trend['month_year']) # Untuk sorting
     df_trend = df_trend.sort_values('occurrence_date')
 else:
-    # Buat dataframe kosong agar chart tidak error jika df_final kosong
     df_trend = pd.DataFrame({'month_year': [], 'Jumlah Kejahatan': [], 'occurrence_date': []})
     
 fig_trend = px.line(
@@ -419,24 +327,21 @@ fig_trend = px.line(
     markers=True,
     labels={'month_year': 'Bulan-Tahun', 'Jumlah Kejahatan': 'Jumlah Kejahatan'}
 )
-# <--- **PERUBAHAN WARNA LINE CHART**
+
 fig_trend.update_traces(line=dict(color=RED_LINE_COLOR), marker=dict(color=RED_MARKER_COLOR))
-# fig_trend.update_xaxes(tickangle=45)
 fig_trend.update_layout(
     title={
-        'text': fig_trend.layout.title.text, # Menggunakan kembali judul yang sudah ada
+        'text': fig_trend.layout.title.text,
         'x': 0.5,
         'xanchor': 'center'
     }
 )
 st.plotly_chart(fig_trend, use_container_width=True)
 
-# st.markdown("---")
-
 # --- 6. Baris 3: Area, Jenis Kejahatan, dan Waktu Rawan ---
 col5, col6 = st.columns(2)
 
-# Q2: Area mana yang memiliki tingkat kejahatan tertinggi dan terendah? (Bar Chart Area)
+# Area yang memiliki tingkat kejahatan tertinggi dan terendah (Bar Chart)
 with col5:
     df_area = df_final.groupby('area').size().reset_index(name='Jumlah Kejahatan').sort_values(by='Jumlah Kejahatan', ascending=False)
     
@@ -447,20 +352,20 @@ with col5:
         title='Tingkat Kejahatan Berdasarkan Area',
         orientation='h',
         color='Jumlah Kejahatan',
-        color_continuous_scale=RED_COLOR_SCALE, # <--- **PERUBAHAN WARNA BAR CHART**
+        color_continuous_scale=RED_COLOR_SCALE,
         labels={'area': 'Area', 'Jumlah Kejahatan': 'Jumlah Kejahatan'}
     )
     fig_area.update_yaxes(categoryorder='total ascending')
     fig_area.update_layout(
         title={
-            'text': fig_area.layout.title.text, # Menggunakan kembali judul yang sudah ada
+            'text': fig_area.layout.title.text,
             'x': 0.5,
             'xanchor': 'center'
         }
     )
     st.plotly_chart(fig_area, use_container_width=True)
 
-# Q4: Jenis kejahatan apa yang paling dominan dan paling jarang terjadi? (Bar Chart Crime Type)
+# Jenis kejahatan yang paling dominan dan paling jarang terjadi (Bar Chart)
 with col6:
     df_crime = df_final['crime_category'].value_counts().reset_index(name='Jumlah Kejahatan')
     df_crime.columns = ['Kategori Kejahatan', 'Jumlah Kejahatan']
@@ -472,13 +377,13 @@ with col6:
         title='Jenis Kejahatan Paling Dominan',
         orientation='h',
         color='Jumlah Kejahatan',
-        color_continuous_scale=RED_COLOR_SCALE, # <--- **PERUBAHAN WARNA BAR CHART**
+        color_continuous_scale=RED_COLOR_SCALE,
         labels={'Kategori Kejahatan': 'Kategori Kejahatan', 'Jumlah Kejahatan': 'Jumlah Kejahatan'}
     )
     fig_crime.update_yaxes(categoryorder='total ascending')
     fig_crime.update_layout(
         title={
-            'text': fig_crime.layout.title.text, # Menggunakan kembali judul yang sudah ada
+            'text': fig_crime.layout.title.text,
             'x': 0.5,
             'xanchor': 'center'
         }
@@ -487,32 +392,26 @@ with col6:
 
 col7, col8 = st.columns(2)
 
-# Q3: Pada jam berapa dan hari apa kejahatan paling sering terjadi? (Time Analysis)
+# Jam dan hari kejahatan paling sering terjadi (Time Analysis)
 with col7:
     df_hour = df_final['occurrence_hour'].value_counts().reset_index(name='Jumlah Kejahatan')
     df_hour.columns = ['Jam Kejadian', 'Jumlah Kejahatan']
     df_hour = df_hour.sort_values(by='Jam Kejadian')
 
-    # --- PERUBAHAN UNTUK INDIKATOR WARNA SKALA ---
     fig_hour = px.bar(
         df_hour,
         x='Jam Kejadian',
         y='Jumlah Kejahatan',
         title='Kejahatan per Jam (24h)',
-        # TAMBAHKAN: Menggunakan kolom Jumlah Kejahatan untuk menentukan warna
         color='Jumlah Kejahatan', 
-        # TAMBAHKAN: Menggunakan skala warna untuk gradien
         color_continuous_scale=RED_COLOR_SCALE
     )
-    # CATATAN: Karena sudah menggunakan 'color' dan 'color_continuous_scale', 
-    # update_traces(marker_color=...) sudah tidak diperlukan.
     
-    # Menyesuaikan label dan tampilan axis
-    fig_hour.update_layout(coloraxis_showscale=True) # Pastikan color bar ditampilkan
+    fig_hour.update_layout(coloraxis_showscale=True)
     fig_hour.update_xaxes(tick0=0, dtick=1)
     fig_hour.update_layout(
         title={
-            'text': fig_hour.layout.title.text, # Menggunakan kembali judul yang sudah ada
+            'text': fig_hour.layout.title.text,
             'x': 0.5,
             'xanchor': 'center'
         }
@@ -530,24 +429,22 @@ with col8:
         y='Jumlah Kejahatan',
         title='Kejahatan per Hari dalam Seminggu',
         color='Jumlah Kejahatan',
-        color_continuous_scale=RED_COLOR_SCALE # <--- **PERUBAHAN WARNA BAR CHART**
+        color_continuous_scale=RED_COLOR_SCALE
     )
 
     fig_day.update_layout(
         title={
-            'text': fig_day.layout.title.text, # Menggunakan kembali judul yang sudah ada
+            'text': fig_day.layout.title.text,
             'x': 0.5,
             'xanchor': 'center'
         }
     )
     st.plotly_chart(fig_day, use_container_width=True)
 
-# st.markdown("---")
-
 # --- 7. Baris 4: Profil Korban dan Konteks Kejadian ---
 col9, col10, col11 = st.columns(3)
 
-# Q5 & Q6: Distribusi Kejahatan berdasarkan Gender, Usia, dan Etnis Korban
+# Distribusi Kejahatan berdasarkan Gender, Usia, dan Etnis Korban
 with col9:
     df_gender = df_final['victim_gender'].value_counts().reset_index(name='Jumlah')
     df_gender.columns = ['Gender', 'Jumlah']
@@ -558,12 +455,12 @@ with col9:
         names='Gender',
         title='Proporsi Gender Korban',
         hole=.3,
-        color_discrete_sequence=RED_PIE_COLORS # <--- **PERUBAHAN WARNA PIE CHART**
+        color_discrete_sequence=RED_PIE_COLORS
     )
 
     fig_gender.update_layout(
         title={
-            'text': fig_trend.layout.title.text, # Menggunakan kembali judul yang sudah ada
+            'text': fig_trend.layout.title.text,
             'x': 0.5,
             'xanchor': 'center'
         }
@@ -584,13 +481,13 @@ with col10:
         x='Kelompok Usia',
         y='Jumlah',
         title='Kejahatan per Kelompok Usia',
-        color='Jumlah', # Tambahkan color agar bisa menggunakan color_continuous_scale
-        color_continuous_scale=RED_COLOR_SCALE # <--- **PERUBAHAN WARNA BAR CHART**
+        color='Jumlah',
+        color_continuous_scale=RED_COLOR_SCALE
     )
     fig_age.update_xaxes(tickangle=45)
     fig_age.update_layout(
         title={
-            'text': fig_age.layout.title.text, # Menggunakan kembali judul yang sudah ada
+            'text': fig_age.layout.title.text,
             'x': 0.5,
             'xanchor': 'center'
         }
@@ -607,25 +504,23 @@ with col11:
         y='Etnis Korban',
         orientation='h',
         title='Top 10 Etnis Korban',
-        color='Jumlah', # Tambahkan color agar bisa menggunakan color_continuous_scale
-        color_continuous_scale=RED_COLOR_SCALE # <--- **PERUBAHAN WARNA BAR CHART**
+        color='Jumlah',
+        color_continuous_scale=RED_COLOR_SCALE
     )
     fig_ethnic.update_yaxes(categoryorder='total ascending')
     fig_ethnic.update_layout(
         title={
-            'text': fig_ethnic.layout.title.text, # Menggunakan kembali judul yang sudah ada
+            'text': fig_ethnic.layout.title.text,
             'x': 0.5,
             'xanchor': 'center'
         }
     )
     st.plotly_chart(fig_ethnic, use_container_width=True)
 
-# st.markdown("---")
-
 # --- 8. Baris 5: Senjata dan Tempat Kejadian ---
 col12, col13 = st.columns(2)
 
-# Q7: Jenis senjata apa yang paling sering digunakan? (Bar Chart Weapon)
+# Jenis senjata yang paling sering digunakan (Bar Chart)
 with col12:
     df_weapon = df_final['weapon'].value_counts().reset_index(name='Jumlah')
     df_weapon.columns = ['Senjata', 'Jumlah']
@@ -639,29 +534,26 @@ with col12:
         y='Senjata',
         orientation='h',
         color='Jumlah',
-        color_continuous_scale=RED_COLOR_SCALE, # <--- **PERUBAHAN WARNA BAR CHART**
+        color_continuous_scale=RED_COLOR_SCALE,
         title='Top 10 Senjata (Exclude Not Specified)'
     )
     fig_weapon.update_yaxes(categoryorder='total ascending')
     fig_weapon.update_layout(
         title={
-            'text': fig_weapon.layout.title.text, # Menggunakan kembali judul yang sudah ada
+            'text': fig_weapon.layout.title.text,
             'x': 0.5,
             'xanchor': 'center'
         }
     )
     st.plotly_chart(fig_weapon, use_container_width=True)
 
-# Q8: Bagaimana hubungan antara jenis tempat kejadian dengan jenis kejahatan? (Heatmap Premise vs Crime)
+# Hubungan antara jenis tempat kejadian dengan jenis kejahatan (Heatmap)
 with col13:
-    # Hitung frekuensi gabungan (Crosstab)
     df_cross = pd.crosstab(df_final['premise'], df_final['crime_category'])
     
-    # Ambil 10 tempat kejadian teratas
     top_premises = df_final['premise'].value_counts().head(10).index
     df_cross_filtered = df_cross.loc[top_premises]
 
-    # Buat Heatmap
     fig_heatmap = px.imshow(
         df_cross_filtered, 
         text_auto=True,
@@ -669,13 +561,13 @@ with col13:
         labels=dict(x="Kategori Kejahatan", y="Tempat Kejadian (Premise)", color="Jumlah Kejahatan"),
         x=df_cross_filtered.columns.tolist(),
         y=df_cross_filtered.index.tolist(),
-        color_continuous_scale=RED_COLOR_SCALE, # <--- **PERUBAHAN WARNA HEATMAP**
+        color_continuous_scale=RED_COLOR_SCALE,
         title='Hubungan Jenis Tempat Kejadian vs Kategori Kejahatan'
     )
     fig_heatmap.update_xaxes(tickangle=45)
     fig_heatmap.update_layout(
         title={
-            'text': fig_heatmap.layout.title.text, # Menggunakan kembali judul yang sudah ada
+            'text': fig_heatmap.layout.title.text,
             'x': 0.5,
             'xanchor': 'center'
         }
