@@ -14,19 +14,19 @@ anggota = [
         "nama": "Risma Auliya Salsabilla",
         "nim": "2210631170100",
         "email": "2210631170100@student.unsika.ac.id",
-        "foto": "assets/log-unsika.png" 
+        "foto": "assets/foto_risma.png" 
     },
     {
         "nama": "Siti Zulhi Nirma Saidah",
         "nim": "2210631170103",
         "email": "2210631170103@student.unsika.ac.id",
-        "foto": "assets/log-unsika.png" 
+        "foto": "assets/foto_zulhi.png" 
     },
     {
         "nama": "Sopian Syauri",
         "nim": "2210631170104",
         "email": "2210631170104@student.unsika.ac.id",
-        "foto": "assets/log-unsika.png" 
+        "foto": "assets/foto_sopian.png" 
     }
 ]
 
