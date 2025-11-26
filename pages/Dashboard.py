@@ -453,7 +453,7 @@ with col9:
         df_gender,
         values='Jumlah',
         names='Gender',
-        title='Kejahatan per Gender',
+        title='Kejahatan per Gender Korban',
         hole=.3,
         color_discrete_sequence=RED_PIE_COLORS
     )
@@ -480,7 +480,7 @@ with col10:
         df_age,
         x='Kelompok Usia',
         y='Jumlah',
-        title='Kejahatan per Kelompok Usia',
+        title='Kejahatan per Kelompok Usia Korban',
         color='Jumlah',
         color_continuous_scale=RED_COLOR_SCALE
     )
