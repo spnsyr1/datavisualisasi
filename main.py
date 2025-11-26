@@ -10,13 +10,13 @@ dashboard = st.Page(
 tentang = st.Page(
     page="pages/Tentang.py",
     title="Tentang",
-    icon=":material/bar_chart:",
+    icon=":material/info:",
 )
 
 kontak = st.Page(
     page="pages/Kontak.py",
     title="Kontak",
-    icon=":material/bar_chart:",
+    icon=":material/mail:",
 )
 
 pg = st.navigation(
