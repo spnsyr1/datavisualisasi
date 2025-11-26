@@ -314,7 +314,7 @@ with col_kpi:
 # Tren jumlah kejahatan
 if not df_final.empty:
     df_trend = df_final.groupby('month_year').size().reset_index(name='Jumlah Kejahatan')
-    df_trend['occurrence_date'] = pd.to_datetime(df_trend['month_year']) # Untuk sorting
+    df_trend['occurrence_date'] = pd.to_datetime(df_trend['month_year'])
     df_trend = df_trend.sort_values('occurrence_date')
 else:
     df_trend = pd.DataFrame({'month_year': [], 'Jumlah Kejahatan': [], 'occurrence_date': []})
@@ -453,7 +453,7 @@ with col9:
         df_gender,
         values='Jumlah',
         names='Gender',
-        title='Proporsi Gender Korban',
+        title='Kejahatan per Jenis Kelamin',
         hole=.3,
         color_discrete_sequence=RED_PIE_COLORS
     )
