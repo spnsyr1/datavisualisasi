@@ -209,7 +209,7 @@ with col_map:
     if not df_final.empty:
         sample_df = df_final.sample(min(20000, len(df_final)))
         
-        fig_map = go.Figure(go.Densitymapbox(
+        fig_map = go.Figure(go.Densitymap(
             lat=sample_df['latitude'], 
             lon=sample_df['longitude'], 
             
@@ -243,7 +243,7 @@ with col_map:
         fig_map.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',
             # Menentukan style peta
-            mapbox_style="open-street-map",
+            map_style="open-street-map",
             # Menentukan lokasi awal peta
             mapbox_center={"lat": sample_df['latitude'].mean(), "lon": sample_df['longitude'].mean()},
             # Menentukan zoom
