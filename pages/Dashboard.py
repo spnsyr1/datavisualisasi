@@ -245,9 +245,9 @@ with col_map:
             # Menentukan style peta
             map_style="open-street-map",
             # Menentukan lokasi awal peta
-            mapbox_center={"lat": sample_df['latitude'].mean(), "lon": sample_df['longitude'].mean()},
+            map_center={"lat": sample_df['latitude'].mean(), "lon": sample_df['longitude'].mean()},
             # Menentukan zoom
-            mapbox_zoom=10,
+            map_zoom=10,
             # Menghilangkan margin agar peta memenuhi kotak
             margin={"r":0, "t":0, "l":0, "b":0},
             # Menentukan tinggi
